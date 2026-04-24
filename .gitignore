@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.env
+.env.local
+db.sqlite3
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# IDEs
+.vscode/
+.idea/
+
+# Agent internal
+.gemini/
+.agent/
+.agents/
+.gsd/
+.planning/
+implementation_plan.md
+task.md
+walkthrough.md
+
+# OS
+.DS_Store
+Thumbs.db

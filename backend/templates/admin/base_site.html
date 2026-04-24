@@ -1,0 +1,130 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+<style>
+    /* Iqra University Theme */
+    :root {
+        --primary: #0A1F44; /* Dark Navy */
+        --secondary: #D4AF37; /* Gold */
+        --accent: #3B82F6; /* Light Blue */
+        --header-color: #ffffff;
+        --body-fg: #333333;
+        --body-bg: #f8f9fa;
+        --module-bg: #ffffff;
+        --link-fg: #0A1F44;
+        --link-hover-color: #3B82F6;
+    }
+
+    /* Header styling */
+    #header {
+        background: var(--primary);
+        color: var(--secondary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        height: 60px;
+    }
+
+    #branding {
+        flex-grow: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #site-name {
+        font-size: 24px;
+        font-weight: bold;
+        color: var(--header-color);
+        margin: 0;
+        text-align: center;
+    }
+    
+    #site-name a {
+        color: var(--header-color) !important;
+        text-decoration: none;
+    }
+
+    /* Custom Dashboard Button */
+    .dashboard-btn {
+        background-color: var(--secondary);
+        color: var(--primary) !important;
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        border: 2px solid var(--secondary);
+        white-space: nowrap;
+    }
+    
+    .dashboard-btn:hover {
+        background-color: transparent;
+        color: var(--secondary) !important;
+    }
+
+    /* Breadcrumbs styling */
+    div.breadcrumbs {
+        background: var(--primary);
+        color: var(--secondary);
+        padding: 10px 15px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    div.breadcrumbs a {
+        color: var(--header-color);
+        text-decoration: none;
+    }
+    
+    div.breadcrumbs a:hover {
+        color: var(--secondary);
+    }
+
+    /* Modules (Tables/Lists) */
+    .module h2, .module caption, .inline-group h2 {
+        background: var(--primary) !important;
+        color: var(--secondary) !important;
+        font-weight: bold;
+    }
+    
+    /* Buttons */
+    .button, input[type=submit], input[type=button], .submit-row input, a.button {
+        background: var(--accent);
+        border-radius: 4px;
+        color: white;
+        border: none;
+    }
+    
+    .button:hover, input[type=submit]:hover, input[type=button]:hover {
+        background: var(--primary);
+    }
+
+    /* Links */
+    a:link, a:visited {
+        color: var(--link-fg);
+    }
+    a:hover {
+        color: var(--link-hover-color);
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<div style="display: flex; width: 100%; align-items: center;">
+    <div style="flex: 1;">
+        <a href="http://localhost:5173/dashboard" class="dashboard-btn">
+            &larr; Go to Dashboard
+        </a>
+    </div>
+    <div id="branding" style="flex: 2; text-align: center;">
+        <h1 id="site-name"><a href="{% url 'admin:index' %}">Attendance System for IU</a></h1>
+    </div>
+    <div style="flex: 1;"></div> <!-- Spacer to balance flex layout -->
+</div>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
