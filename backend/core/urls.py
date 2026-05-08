@@ -20,16 +20,19 @@ from django.http import JsonResponse
 from rest_framework.routers import DefaultRouter
 from academics.views import (
     CourseViewSet, LectureViewSet, LectureSessionViewSet,
-    AttendanceRecordViewSet, AttendanceReviewViewSet, StudentStatsViewSet
+    AttendanceRecordViewSet, AttendanceReviewViewSet
 )
+
+from users.api import UserViewSet
 
 router = DefaultRouter()
 router.register(r'courses', CourseViewSet)
+router.register(r'users', UserViewSet)
 router.register(r'lectures', LectureViewSet)
 router.register(r'sessions', LectureSessionViewSet)
 router.register(r'attendance', AttendanceRecordViewSet)
 router.register(r'reviews', AttendanceReviewViewSet)
-router.register(r'students', StudentStatsViewSet, basename='student-stats')
+
 
 def home(request):
     return JsonResponse({"status": "AASAS API Online", "version": "4.0.0"})

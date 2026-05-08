@@ -1,19 +1,25 @@
 import axios from 'axios';
 
-// Create a basic Axios client
+// Axios client using Django session auth (cookie-based)
 export const apiClient = axios.create({
   baseURL: 'http://localhost:8000/api/',
-  withCredentials: true,
+  withCredentials: true,  // include session cookie on every request
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Optionally, add interceptors for auth tokens here if needed
+// Read CSRF token from Django's csrftoken cookie and attach it to every
+// mutating request — required by Django's CsrfViewMiddleware
+function getCsrfToken() {
+  const match = document.cookie.match(/csrftoken=([^;]+)/);
+  return match ? match[1] : '';
+}
+
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const method = (config.method || '').toLowerCase();
+  if (!['get', 'head', 'options', 'trace'].includes(method)) {
+    config.headers['X-CSRFToken'] = getCsrfToken();
   }
   return config;
 });

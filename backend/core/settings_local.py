@@ -37,6 +37,12 @@ SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+# Allow session cookie on cross-origin requests (localhost:5173 → localhost:8000)
+# SameSite=Lax (the Django default) blocks cookies on cross-origin POSTs
+SESSION_COOKIE_SAMESITE = None
+CSRF_COOKIE_SAMESITE = None
 
 # ── REST Framework Configuration ──────────────────────────────────────────
 REST_FRAMEWORK = {

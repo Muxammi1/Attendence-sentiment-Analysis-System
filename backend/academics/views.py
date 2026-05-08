@@ -3,11 +3,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Q
+from django.utils import timezone
+from datetime import date, timedelta
 from academics.models import Course, Lecture, LectureSession, AttendanceRecord, AttendanceReview
 from students.models import Student
 from .serializers import (
     CourseSerializer, LectureSerializer, LectureSessionSerializer,
-    AttendanceRecordSerializer, AttendanceReviewSerializer, StudentStatsSerializer
+    AttendanceRecordSerializer, AttendanceReviewSerializer, StudentStatsSerializer,
+    StudentSerializer
 )
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -20,6 +23,45 @@ class CourseViewSet(viewsets.ModelViewSet):
         if user.role == 'ADMIN':
             return Course.objects.all()
         return Course.objects.filter(instructor=user)
+
+    @action(detail=True, methods=['post'])
+    def setup(self, request, pk=None):
+        """Auto-generate 16 lectures × 2 sessions for a newly created course."""
+        course = self.get_object()
+
+        # Prevent double-setup
+        if course.lectures.exists():
+            return Response(
+                {'error': 'Course already has lectures. Use individual lecture/session endpoints to modify.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        today = date.today()
+        created_lectures = []
+        for lecture_num in range(1, 17):  # Lectures 1–16
+            lecture = Lecture.objects.create(
+                course=course,
+                lecture_number=lecture_num,
+                title=f'Lecture {lecture_num}',
+            )
+            for session_num in range(1, 3):  # Sessions 1–2
+                # Placeholder dates spaced a week apart
+                session_date = today + timedelta(weeks=(lecture_num - 1) * 2 + (session_num - 1))
+                LectureSession.objects.create(
+                    lecture=lecture,
+                    session_number=session_num,
+                    date=session_date,
+                    start_time='08:00:00',
+                    end_time='09:30:00',
+                    location='TBD',
+                )
+            created_lectures.append(lecture_num)
+
+        serializer = LectureSerializer(course.lectures.all(), many=True)
+        return Response({
+            'message': f'Created {len(created_lectures)} lectures × 2 sessions each.',
+            'lectures': serializer.data
+        }, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['get'])
     def lectures(self, request, pk=None):
@@ -193,56 +235,4 @@ class AttendanceReviewViewSet(viewsets.ModelViewSet):
         return AttendanceReview.objects.filter(
             attendance_record__lecture_session__lecture__course__instructor=user
         )
-
-class StudentStatsViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
-
-    @action(detail=True, methods=['get'])
-    def stats(self, request, pk=None):
-        """Get attendance statistics for a student"""
-        try:
-            student = Student.objects.get(id=pk)
-        except Student.DoesNotExist:
-            return Response(
-                {'error': 'Student not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # Get all courses the student is enrolled in
-        courses = student.courses_enrolled.all()
-        stats_data = []
-
-        for course in courses:
-            # Get all sessions for this course
-            sessions = LectureSession.objects.filter(lecture__course=course)
-            total_sessions = sessions.count()
-
-            if total_sessions == 0:
-                continue
-
-            # Get attendance records for this student in this course
-            records = AttendanceRecord.objects.filter(
-                student=student,
-                lecture_session__lecture__course=course
-            )
-
-            present_count = records.filter(status='Present').count()
-            absent_count = records.filter(status='Absent').count()
-            excused_count = records.filter(status='Excused').count()
-            attendance_percentage = round((present_count / total_sessions) * 100, 1)
-
-            stats_data.append({
-                'student': StudentSerializer(student).data,
-                'course_id': course.id,
-                'course_code': course.code,
-                'course_name': course.name,
-                'total_sessions': total_sessions,
-                'present_count': present_count,
-                'absent_count': absent_count,
-                'excused_count': excused_count,
-                'attendance_percentage': attendance_percentage,
-                'attendance_hits': records.count()
-            })
-
-        serializer = StudentStatsSerializer(stats_data, many=True)
-        return Response(serializer.data)
+

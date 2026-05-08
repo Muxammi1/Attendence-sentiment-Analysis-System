@@ -74,7 +74,9 @@ class LectureSerializer(serializers.ModelSerializer):
 class CourseSerializer(serializers.ModelSerializer):
     instructor_name = serializers.CharField(source='instructor.get_full_name', read_only=True)
     lectures = LectureSerializer(many=True, read_only=True)
+    students = StudentSerializer(many=True, read_only=True)
     student_count = serializers.SerializerMethodField()
+
     total_sessions = serializers.SerializerMethodField()
     average_attendance = serializers.SerializerMethodField()
 
@@ -85,6 +87,10 @@ class CourseSerializer(serializers.ModelSerializer):
             'students', 'lectures', 'student_count', 'total_sessions',
             'average_attendance', 'created_at', 'updated_at'
         ]
+        extra_kwargs = {
+            'instructor': {'required': False, 'allow_null': True},
+            'students': {'required': False},
+        }
 
     def get_student_count(self, obj):
         return obj.students.count()

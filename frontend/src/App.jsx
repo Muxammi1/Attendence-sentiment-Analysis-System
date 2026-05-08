@@ -7,10 +7,18 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import FacultyDashboard from './pages/FacultyDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import CoursesPage from './pages/CoursesPage';
+import UsersPage from './pages/UsersPage';
 import LecturesSessionsPage from './pages/LecturesSessionsPage';
 import AttendanceMarkingPage from './pages/AttendanceMarkingPage';
 import StudentEnrollmentPage from './pages/StudentEnrollmentPage';
 import LiveSessionPage from './pages/LiveSessionPage';
+
+const Placeholder = ({ name }) => (
+  <div className="card">
+    <div className="card-title">{name} Module</div>
+    <div className="card-sub">This module is coming soon in v4.1.</div>
+  </div>
+);
 
 const AppLayout = ({ children }) => {
   const location = useLocation();
@@ -48,9 +56,9 @@ function App() {
             <Route path="/faculty/attendance/take" element={<AttendanceMarkingPage />} />
             <Route path="/faculty/attendance/reports" element={<LecturesSessionsPage />} />
             <Route path="/faculty/sentiment" element={<LecturesSessionsPage />} />
-            <Route path="/admin/users" element={<CoursesPage />} />
-            <Route path="/admin/health" element={<CoursesPage />} />
-            <Route path="/admin/audit" element={<CoursesPage />} />
+            <Route path="/admin/users" element={<UsersPage />} />
+            <Route path="/admin/health" element={<Placeholder name="System Health" />} />
+            <Route path="/admin/audit" element={<Placeholder name="System Audit" />} />
           </Routes>
         </AppLayout>
       </BrowserRouter>

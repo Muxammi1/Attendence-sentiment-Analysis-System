@@ -10,6 +10,8 @@ export default function LiveSessionPage() {
   const [loading, setLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(true);
 
+  const [pollError, setPollError] = useState(null);
+
   useEffect(() => {
     let interval;
     if (isScanning) {
@@ -26,14 +28,21 @@ export default function LiveSessionPage() {
     try {
       const res = await apiClient.get(`/dashboard/sessions/${sessionId}/live/`);
       setDetections(prev => {
-        const newDets = res.data.detections;
+        const newDets = res.data.detections || [];
         const combined = [...newDets, ...prev].filter((v, i, a) => a.findIndex(t => t.student_id === v.student_id) === i);
         return combined.slice(0, 8);
       });
       setStats(res.data.stats);
+      setPollError(null);
       setLoading(false);
     } catch (err) {
-      console.error(err);
+      console.error('Live poll error:', err);
+      // Don't crash the page — show a fallback message
+      if (err.response?.status === 404 || err.response?.status === 500) {
+        setPollError('CV Engine is running. Waiting for first face detection...');
+        setIsScanning(false);
+      }
+      setLoading(false);
     }
   };
 
@@ -99,6 +108,10 @@ export default function LiveSessionPage() {
           <div className="detections-list">
             {loading ? (
               <div className="p-20 text-center" style={{ color: 'var(--text3)' }}>Initializing AI Engine...</div>
+            ) : pollError ? (
+              <div className="p-20 text-center" style={{ color: 'var(--iu-gold)', padding: '24px', fontSize: '13px' }}>
+                ⚠️ {pollError}
+              </div>
             ) : detections.length === 0 ? (
               <div className="p-20 text-center" style={{ color: 'var(--text3)' }}>Waiting for detections...</div>
             ) : detections.map((det, idx) => (

@@ -19,26 +19,6 @@ class Course(models.Model):
     def __str__(self):
         return f"{self.code} - {self.name}"
 
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from datetime import date, timedelta
-
-@receiver(post_save, sender=Course)
-def create_course_structure(sender, instance, created, **kwargs):
-    if created:
-        for i in range(1, 17):
-            lecture = Lecture.objects.create(course=instance, lecture_number=i)
-            # Create 2 sessions per lecture
-            for s in range(1, 3):
-                LectureSession.objects.create(
-                    lecture=lecture,
-                    session_number=s,
-                    date=date.today() + timedelta(weeks=(i-1), days=(s*2)), # Simulated schedule
-                    start_time="09:00",
-                    end_time="12:00",
-                    location="Main Campus"
-                )
-
 
 class Lecture(models.Model):
     """Represents a lecture (16 per course)"""

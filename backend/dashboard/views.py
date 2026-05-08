@@ -22,23 +22,28 @@ class CourseDetailAPI(APIView):
 
     def get(self, request, course_id):
         course = get_object_or_404(Course, id=course_id, instructor=request.user)
-        sessions = course.sessions.all().order_by('session_number')
-        
+        # Fixed: Course has no .sessions reverse FK — sessions live under lectures
+        sessions = LectureSession.objects.filter(
+            lecture__course=course
+        ).select_related('lecture').order_by('lecture__lecture_number', 'session_number')
+
         session_data = []
         for session in sessions:
             attendances = AttendanceRecord.objects.filter(lecture_session=session)
             sentiments = SentimentRecord.objects.filter(lecture_session=session)
-            
+
             att_list = [{"student": a.student.enrollment_id, "status": a.status, "id": a.id} for a in attendances]
             sent_list = [{"student": s.student.enrollment_id, "emotion": s.dominant_emotion, "score": s.confidence_score} for s in sentiments]
-            
+
             session_data.append({
+                "id": session.id,
+                "lecture_number": session.lecture.lecture_number,
                 "session_number": session.session_number,
                 "date": session.date,
                 "attendance": att_list,
                 "sentiment": sent_list
             })
-            
+
         return Response({
             "course": {"id": course.id, "code": course.code, "name": course.name},
             "sessions": session_data
@@ -78,13 +83,19 @@ class AttendanceOverrideAPI(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, record_id):
-        record = get_object_or_404(AttendanceRecord, id=record_id, lecture_session__course__instructor=request.user)
+        # Fixed: correct FK path through lecture to course
+        record = get_object_or_404(
+            AttendanceRecord,
+            id=record_id,
+            lecture_session__lecture__course__instructor=request.user
+        )
         new_status = request.data.get("status")
         if new_status in dict(AttendanceRecord.STATUS_CHOICES):
             record.status = new_status
+            record.notes = request.data.get("notes", record.notes)
             record.save()
             return Response({"status": "success", "new_status": record.status})
-        return Response({"error": "Invalid Status"}, status=400)
+        return Response({"error": "Invalid status. Must be Present, Absent, or Excused."}, status=400)
 
 
 class AdminDashboardAPI(APIView):
@@ -106,7 +117,7 @@ class AdminDashboardAPI(APIView):
                 {
                     "time": log.timestamp.strftime("%H:%M"),
                     "action": log.action,
-                    "detail": f"{log.user.username} · {log.ip_address or 'System'}",
+                    "detail": f"{log.user.username if log.user else 'System'} · {log.ip_address or 'Local'}",
                     "icon": "✏" if "Override" in log.action else "🔐" if "Login" in log.action else "➕"
                 }
                 for log in AuditLog.objects.select_related('user').order_by('-timestamp')[:5]

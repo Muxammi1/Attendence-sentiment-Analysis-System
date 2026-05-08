@@ -3,6 +3,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import Student, BiometricEmbedding
 from .serializers import StudentSerializer, BiometricSerializer, BiometricEnrollSerializer
+from academics.models import Course, LectureSession, AttendanceRecord
+from academics.serializers import StudentStatsSerializer
+
 from cv_engine.faiss_service import FAISSIndexManager
 from cv_engine.utils import face_extractor
 
@@ -51,4 +54,49 @@ class StudentViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_200_OK)
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'])
+    def stats(self, request, pk=None):
+        """Get attendance statistics for a student"""
+        student = self.get_object()
+
+        # Get all courses the student is enrolled in
+        courses = student.courses_enrolled.all()
+        stats_data = []
+
+        for course in courses:
+            # Get all sessions for this course
+            sessions = LectureSession.objects.filter(lecture__course=course)
+            total_sessions = sessions.count()
+
+            if total_sessions == 0:
+                continue
+
+            # Get attendance records for this student in this course
+            records = AttendanceRecord.objects.filter(
+                student=student,
+                lecture_session__lecture__course=course
+            )
+
+            present_count = records.filter(status='Present').count()
+            absent_count = records.filter(status='Absent').count()
+            excused_count = records.filter(status='Excused').count()
+            attendance_percentage = round((present_count / total_sessions) * 100, 1)
+
+            stats_data.append({
+                'student': StudentSerializer(student).data,
+                'course_id': course.id,
+                'course_code': course.code,
+                'course_name': course.name,
+                'total_sessions': total_sessions,
+                'present_count': present_count,
+                'absent_count': absent_count,
+                'excused_count': excused_count,
+                'attendance_percentage': attendance_percentage,
+                'attendance_hits': records.count()
+            })
+
+        serializer = StudentStatsSerializer(stats_data, many=True)
+        return Response(serializer.data)
+
 
